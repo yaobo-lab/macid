@@ -19,7 +19,7 @@
 mod errors;
 mod linux;
 mod macos;
-mod utils;
+pub mod utils;
 mod windows;
 
 use errors::HWIDError;
