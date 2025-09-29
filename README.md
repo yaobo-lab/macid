@@ -1,74 +1,109 @@
-[![Check, build and deploy!](https://github.com/Taptiive/machineid-rs/actions/workflows/action.yml/badge.svg)](https://github.com/Taptiive/machineid-rs/actions/workflows/action.yml)
-<a href="https://crates.io/crates/machineid-rs"><img src="https://img.shields.io/crates/v/machineid-rs?style=for-the-badge&logo=rust&color=orange" /></a>
-<a href="https://docs.rs/machineid-rs/latest/machineid_rs/">
-    <img src="https://img.shields.io/badge/docs-latest-blue.svg?style=for-the-badge&logo=rust&color=blue"
-      alt="docs.rs docs" />
-</a>
+## base on
 
-## MachineID for Rust - Like .Net DeviceId
+https://github.com/Taptiive/machineid-rs
 
-This Rust package is inspired by [DeviceId](https://github.com/MatthewKing/DeviceId), a .Net package to build a unique Machine ID.
+## Install
 
-### Features
-
-- 3 Different types of hash (*MD5*, *SHA1*, *SHA256*)
-- Different components to make the ID
-- Support for Windows, Linux and MacOS
-- No Admin privileges are required
-
-### How to use
-
-First add this to your Cargo.toml file
-
-```toml
-[dependencies]
-machineid-rs = "1.2.4"
+```bash
+cargo add macid
 ```
 
-Then, you need to define the builder variable with the encryption type you want.
-
-For example, **SHA256**
-```rust
-use machineid_rs::{IdBuilder, Encryption};
-
-// There are 3 different encryption types: MD5, SHA1 and SHA256.
-let mut builder = IdBuilder::new(Encryption::SHA256);
-```
-
-After that, you just need to add the components you want the id to have.
-
-The available components are:
-
-- **System UUID**: Unique identifier of your machine
-  
-- **CPU Cores**: Number of physical cores from your computer
-  
-- **OS Name**: Operative System name, i.e., linux/windows
-  
-- **Username**: The username currently being used
-  
-- **Machine Name**: The name of the machine
-  
-- **CPU ID**: The serial number of the processor
-  
-- **Drive Serial** : The serial number of the disk storing the OS.
-  
-For example, i will add the System UUID and CPU Cores
-```rust
-use machineid_rs::HWIDComponent;
-
-builder.add_component(HWIDComponent::SystemID).add_component(HWIDComponent::CPUCores);
-```
-
-Once you are ready, you just need to build the id with your key
+## Usage
 
 ```rust
-let hwid = builder.build("mykey").unwrap();
+   use super::*;
+    use std::env;
+    use std::process;
+    use toolkit_rs::logger::{self, LogConfig};
+    #[allow(dead_code)]
+    fn init_log() {
+        logger::setup(LogConfig::default()).unwrap_or_else(|e| {
+            println!("log setup err:{}", e);
+            process::exit(1);
+        });
+    }
+
+    #[test]
+    fn every_option_sha256() {
+        let mut builder = IdBuilder::new();
+        builder
+            .add_component(HWIDComponent::SystemID)
+            .add_component(HWIDComponent::OSName)
+            .add_component(HWIDComponent::CPUCores)
+            .add_component(HWIDComponent::CPUID)
+            .add_component(HWIDComponent::DriveSerial)
+            .add_component(HWIDComponent::MacAddress)
+            .add_component(HWIDComponent::FileToken("test.txt"))
+            .add_component(HWIDComponent::Username)
+            .add_component(HWIDComponent::MachineName);
+        let id = builder.get_id().unwrap();
+        let hash = builder.encode_id(id, "mykey", Encryption::MD5).unwrap();
+        let expected = env::var("SHA256_MACHINEID_HASH").unwrap();
+        assert_eq!(expected, hash);
+    }
+
+    #[test]
+    fn every_option_sha1() {
+        let mut builder = IdBuilder::new();
+        builder
+            .add_component(HWIDComponent::SystemID)
+            .add_component(HWIDComponent::OSName)
+            .add_component(HWIDComponent::CPUCores)
+            .add_component(HWIDComponent::CPUID)
+            .add_component(HWIDComponent::DriveSerial)
+            .add_component(HWIDComponent::MacAddress)
+            .add_component(HWIDComponent::FileToken("test.txt"))
+            .add_component(HWIDComponent::Username)
+            .add_component(HWIDComponent::MachineName);
+        let hash = builder.encode("mykey", Encryption::MD5).unwrap();
+        let expected = env::var("SHA1_MACHINEID_HASH").unwrap();
+        assert_eq!(expected, hash);
+    }
+
+    #[test]
+    fn every_option_md5() {
+        let mut builder = IdBuilder::new();
+        builder
+            .add_component(HWIDComponent::SystemID)
+            .add_component(HWIDComponent::OSName)
+            .add_component(HWIDComponent::CPUCores)
+            .add_component(HWIDComponent::CPUID)
+            .add_component(HWIDComponent::DriveSerial)
+            .add_component(HWIDComponent::MacAddress)
+            .add_component(HWIDComponent::FileToken("test.txt"))
+            .add_component(HWIDComponent::Username)
+            .add_component(HWIDComponent::MachineName);
+        let hash = builder.encode("mykey", Encryption::MD5).unwrap();
+        let expected = env::var("MD5_MACHINEID_HASH").unwrap();
+        assert_eq!(expected, hash);
+    }
+
+    #[test]
+    fn every_option_md52() {
+        let mut builder = IdBuilder::new();
+        builder.add_component(HWIDComponent::DriveSerial);
+        let id = builder.get_id().unwrap();
+
+        let hash = builder.encode_id(id, "mykey", Encryption::MD5).unwrap();
+        let expected = env::var("MD5_MACHINEID_HASH").unwrap();
+        assert_eq!(expected, hash);
+    }
+    //639ad566dd7b7da6
+    #[test]
+    fn every_option_md516() {
+        let mut builder = IdBuilder::new();
+        builder.add_component(HWIDComponent::DriveSerial);
+        builder.add_component(HWIDComponent::MacAddress);
+        let id = builder.get_id().unwrap();
+
+        let hash = builder.encode_id(id, "mykey", Encryption::MD520).unwrap();
+
+        println!("{}", hash);
+    }
+
+    #[test]
+    fn every_id_test() {
+        let builder = IdBuilder::new();
+        builder.print_all();
+    }
 ```
-
-### Todo
-
-- Optimize the code
-- Fix bugs and increase platform integration/stability
-  
-*Feel free to report any bug you find! ;)*
